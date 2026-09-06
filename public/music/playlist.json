@@ -1,3 +1,34 @@
 {
-  "tracks": []
+  "tracks": [
+    {
+      "title": "遠い光の向こう",
+      "artist": "",
+      "src": "music/tooi-hikari-no-mukou.mp3"
+    },
+    {
+      "title": "Warmest Rivers",
+      "artist": "",
+      "src": "music/warmest-rivers.mp3"
+    },
+    {
+      "title": "Chasing Your Orbit",
+      "artist": "",
+      "src": "music/chasing-your-orbit.mp3"
+    },
+    {
+      "title": "Burning Through Light Years",
+      "artist": "",
+      "src": "music/burning-through-light-years.mp3"
+    },
+    {
+      "title": "A Million Miles From Home",
+      "artist": "",
+      "src": "music/a-million-miles-from-home.mp3"
+    },
+    {
+      "title": "Light Of Another Sun",
+      "artist": "",
+      "src": "music/light-of-another-sun.mp3"
+    }
+  ]
 }
