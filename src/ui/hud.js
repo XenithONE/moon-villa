@@ -22,7 +22,7 @@ function el(html) {
 /**
  * HUD：入場画面・年代表示・キャプション・タイムライン・ラジオパネル。
  */
-export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) {
+export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek, onSit }) {
   root.innerHTML = '';
 
   const enter = el(`
@@ -32,7 +32,7 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) 
         <h1 class="enter-title">月の別荘</h1>
         <p class="enter-sub">地球の46億年を、窓辺から。</p>
         <button id="enter-btn" class="btn btn-primary" type="button">入る</button>
-        <p class="enter-hint">ドラッグで見回す ／ Space 再生・停止 ／ M 隕石 ／ R ラジオ</p>
+        <p class="enter-hint">ドラッグで見回す ／ WASD で歩く ／ C 座る・立つ ／ Space 再生・停止 ／ M 隕石 ／ R ラジオ</p>
       </div>
     </div>`);
 
@@ -60,6 +60,7 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) 
             <button class="btn" type="button" data-speed="4">4×</button>
           </div>
           <span class="spacer"></span>
+          <button id="sit" class="btn" type="button" title="座る / 立つ (C)">🪑 立つ</button>
           <button id="meteor" class="btn" type="button" title="隕石を落とす (M)">☄ 隕石</button>
           <button id="radio-btn" class="btn" type="button" title="ラジオ (R)">📻 ラジオ</button>
           <button id="fs" class="btn icon" type="button" title="全画面 (F)" aria-label="全画面">⛶</button>
@@ -156,6 +157,11 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) 
   scrub.addEventListener('keydown', (e) => e.stopPropagation());
 
   $('#meteor').addEventListener('click', () => onMeteor?.());
+  $('#sit').addEventListener('click', () => onSit?.());
+  function setSeated(seated) {
+    $('#sit').textContent = seated ? '🪑 立つ' : '🪑 座る';
+    $('#sit').title = seated ? '立って歩く (C)' : '座って眺める (C)';
+  }
   $('#fs').addEventListener('click', toggleFullscreen);
   function toggleFullscreen() {
     if (document.fullscreenElement) document.exitFullscreen?.();
@@ -251,6 +257,7 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) 
       case '3': setSpeed(2); break;
       case '4': setSpeed(4); break;
       case 'm': case 'M': onMeteor?.(); break;
+      case 'c': case 'C': onSit?.(); break;
       case 'r': case 'R': setRadioOpen(radioPanel.hidden); break;
       case 'f': case 'F': toggleFullscreen(); break;
       case 'Escape': setRadioOpen(false); break;
@@ -294,5 +301,5 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) 
     }
   }
 
-  return { update, caption, setRadioOpen, setSpeed, get entered() { return entered; } };
+  return { update, caption, setRadioOpen, setSpeed, setSeated, get entered() { return entered; } };
 }

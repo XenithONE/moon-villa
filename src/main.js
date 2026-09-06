@@ -8,38 +8,51 @@ import { createEarth } from './scene/earth.js';
 import { createLighting } from './scene/lighting.js';
 import { createImpactFX } from './scene/meteor.js';
 import { createPostFX } from './scene/postfx.js';
-import { createSeatedLook } from './controls/seatedLook.js';
+import { createWalkControls } from './controls/walk.js';
 import { createTimeline } from './time/timeline.js';
 import { createRadio } from './audio/radio.js';
 import { createHUD } from './ui/hud.js';
+import { qualityTier } from './util/quality.js';
 
-// 月面の夕暮れ：太陽は右手の地平線近く。地球は窓の左上、半分だけ照らされている。
-const SUN_DIR = new THREE.Vector3(0.93, 0.14, -0.34).normalize();
-const EARTH_DIR = new THREE.Vector3(-0.2, 0.22, -1).normalize();
-const EARTH_DIST = 620;
-const EARTH_RADIUS = 72;
+// v2「円窓の黄昏」: 太陽は窓の外・右上やや後方（逆光）。地球は円窓の中央、地平線のすぐ上に巨大に。
+const SUN_DIR = new THREE.Vector3(0.53, 0.56, -0.64).normalize();
+const EARTH_DIR = new THREE.Vector3(0.02, 0.25, -0.968).normalize();
+const EARTH_DIST = 640;
+const EARTH_RADIUS = 128;
+const EXPOSURE = 1.0;
 
 const canvas = document.getElementById('scene');
 const uiRoot = document.getElementById('ui');
 
+const tier = qualityTier();
 const { renderer, scene, camera, resize } = createWorld(canvas);
+renderer.setPixelRatio(tier === 'high' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1);
+renderer.toneMappingExposure = EXPOSURE;
 
-scene.add(createSky());
+const sky = createSky();
+sky.setSunDir(SUN_DIR);
+scene.add(sky.group);
 const moon = createMoonSurface();
 scene.add(moon.group);
 const villa = createVilla();
+villa.setSunDir?.(SUN_DIR);
 scene.add(villa.group);
 
 const earth = createEarth({ radius: EARTH_RADIUS, sunDir: SUN_DIR });
 earth.group.position.copy(EARTH_DIR).multiplyScalar(EARTH_DIST);
 scene.add(earth.group);
 
+// 照明は別荘を scene に入れた後に（窓とシャドウ範囲をシーンから読む）
 const lighting = createLighting(scene, { sunDir: SUN_DIR, earthDir: EARTH_DIR });
 
-camera.position.copy(villa.seat);
-const look = createSeatedLook(camera, canvas, { baseYaw: 0, basePitch: 0.12 });
-// 最初は地球の少し下（窓枠と部屋が入る構図）を見る
-look.lookAt(earth.group.position.clone().addScaledVector(new THREE.Vector3(0, -1, 0), 70), { instant: true });
+// 視点：デイベッドに座る／立って歩く
+const look = createWalkControls(camera, canvas, {
+  eyeHeight: 1.62,
+  seat: villa.seat,
+  seatLook: villa.seatLook,
+  bounds: villa.bounds,
+  colliders: villa.colliders,
+});
 
 const post = createPostFX(renderer, scene, camera);
 const timeline = createTimeline({ speed: 1, cycleSeconds: 360 });
@@ -57,6 +70,9 @@ const hud = createHUD({
   onSeek: () => {
     if (fx.active) fx.cancel();
   },
+  onSit: () => {
+    look.toggle();
+  },
   onEnter: () => {
     radio.ensureContext();
     radio.select(0, true);
@@ -66,6 +82,7 @@ const hud = createHUD({
     if (ev) hud.caption(ev);
   },
 });
+hud.setSeated(true);
 
 radio.onChange((st) => {
   villa.setRadioOn(st.playing);
@@ -112,10 +129,13 @@ function ensureSize() {
 window.addEventListener('resize', ensureSize);
 
 // ---- ループ
-const clock = new THREE.Clock();
+let lastTime = performance.now();
 let frames = 0;
+let lastMode = null;
 function frame(dtOverride) {
-  const dt = typeof dtOverride === 'number' ? dtOverride : Math.min(0.1, clock.getDelta());
+  const now = performance.now();
+  const dt = typeof dtOverride === 'number' ? dtOverride : Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
   if (!ensureSize()) return;
   const fired = timeline.update(dt);
   for (const ev of fired) {
@@ -125,11 +145,18 @@ function frame(dtOverride) {
     }
   }
   const state = timeline.state;
+  sky.update(dt, state);
   earth.update(dt, state);
   lighting.update(state, { heat: earth.uniforms.uHeat.value, dust: earth.uniforms.uDust.value });
-  villa.update(dt);
+  villa.update(dt, state);
   fx.update(dt);
   look.update(dt);
+  if (look.mode !== lastMode) {
+    lastMode = look.mode;
+    // 立って歩いている間は、寝椅子に白衣の人物が座って眺めている
+    if (villa.figure) villa.figure.visible = look.mode === 'walking';
+    hud.setSeated(look.mode === 'seated');
+  }
   hud.update(state);
   post.render(dt);
   if (++frames === 2) document.body.classList.add('ready');
@@ -139,11 +166,11 @@ renderer.setAnimationLoop(() => frame());
 
 // デバッグ用の窓口（ブラウザ検証で使う）
 window.__moonVilla = {
-  timeline, radio, fx, earth, camera, renderer, hud, look, post, villa, lighting, scene, THREE,
+  timeline, radio, fx, earth, camera, renderer, hud, look, post, villa, lighting, sky, moon, scene, THREE, tier,
   /** 検証用：1 フレーム進める（rAF が止まる環境でも状態を進められる） */
   step(dt = 1 / 60) {
     frame(dt);
-    return { frames, year: timeline.state.year, t: timeline.state.t, fxPhase: fx.phase };
+    return { frames, year: timeline.state.year, t: timeline.state.t, fxPhase: fx.phase, mode: look.mode };
   },
   get frames() {
     return frames;
