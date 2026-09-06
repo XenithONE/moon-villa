@@ -46,7 +46,7 @@ export function createPostFX(renderer, scene, camera) {
   const size = renderer.getSize(new THREE.Vector2());
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.55, 0.55, 0.9);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.42, 0.6, 1.0);
   composer.addPass(bloom);
   const nostalgia = new ShaderPass(NostalgiaShader);
   composer.addPass(nostalgia);

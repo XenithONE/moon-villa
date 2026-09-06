@@ -1,4 +1,4 @@
-import { formatYear, TIME_KEYS, tFromYear, NOW } from '../time/epochs.js';
+import { formatYear, tFromYear, NOW } from '../time/epochs.js';
 
 const SCRUB_MAX = 10000;
 
@@ -22,7 +22,7 @@ function el(html) {
 /**
  * HUD：入場画面・年代表示・キャプション・タイムライン・ラジオパネル。
  */
-export function createHUD({ root, timeline, radio, onMeteor, onEnter }) {
+export function createHUD({ root, timeline, radio, onMeteor, onEnter, onSeek }) {
   root.innerHTML = '';
 
   const enter = el(`
@@ -37,7 +37,7 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter }) {
     </div>`);
 
   const hud = el(`
-    <div id="hud" class="hud">
+    <div id="hud" class="hud pre">
       <div class="year-block">
         <div id="year" class="year">46億年前</div>
         <div id="hold" class="hold">— 時が止まる —</div>
@@ -118,14 +118,12 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter }) {
     const span = el(`<span class="tick" style="left:${(t * 100).toFixed(2)}%"><i></i>${tk.label}</span>`);
     ticks.append(span);
   }
-  void TIME_KEYS;
-
   // ---- 入場
   let entered = false;
-  $('#enter-btn', enter);
   enter.querySelector('#enter-btn').addEventListener('click', () => {
     if (entered) return;
     entered = true;
+    hud.classList.remove('pre');
     enter.classList.add('out');
     setTimeout(() => enter.remove(), 1400);
     onEnter?.();
@@ -146,6 +144,7 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter }) {
   let scrubbing = false;
   scrub.addEventListener('pointerdown', () => { scrubbing = true; });
   scrub.addEventListener('input', () => {
+    onSeek?.();
     timeline.seek(scrub.valueAsNumber / SCRUB_MAX);
     const ev = timeline.currentEvent();
     if (ev) caption(ev, { quiet: true });
@@ -240,9 +239,11 @@ export function createHUD({ root, timeline, radio, onMeteor, onEnter }) {
         timeline.toggle();
         break;
       case 'ArrowLeft':
+        onSeek?.();
         timeline.seek(timeline.state.t - 0.01);
         break;
       case 'ArrowRight':
+        onSeek?.();
         timeline.seek(timeline.state.t + 0.01);
         break;
       case '1': setSpeed(0.5); break;

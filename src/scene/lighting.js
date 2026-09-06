@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * 室内のランプは villa.js が持つ。
  */
 export function createLighting(scene, { sunDir, earthDir }) {
-  const sun = new THREE.DirectionalLight(0xfff0dc, 3.0);
+  const sun = new THREE.DirectionalLight(0xffc48a, 1.0);
   sun.position.copy(sunDir).multiplyScalar(150);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
@@ -26,10 +26,10 @@ export function createLighting(scene, { sunDir, earthDir }) {
   earthshine.target.position.set(0, 0, 0);
   scene.add(earthshine, earthshine.target);
 
-  const hemi = new THREE.HemisphereLight(0x0f131f, 0x1c1712, 0.35);
+  const hemi = new THREE.HemisphereLight(0x131a2a, 0x2a2018, 0.55);
   scene.add(hemi);
 
-  const sunBase = new THREE.Color(1.0, 0.94, 0.86);
+  const sunBase = new THREE.Color(1.0, 0.8, 0.58);
   const shineBlue = new THREE.Color(0x8fb4ff);
   const shineOrange = new THREE.Color(0xff8a3a);
   const tmp = new THREE.Color();
@@ -37,7 +37,7 @@ export function createLighting(scene, { sunDir, earthDir }) {
   function update(state, { heat = 0, dust = 0 } = {}) {
     const p = state.params;
     sun.color.setRGB(sunBase.r * p.sunColor[0], sunBase.g * p.sunColor[1], sunBase.b * p.sunColor[2]);
-    sun.intensity = 3.0 * p.sunIntensity;
+    sun.intensity = 1.0 * p.sunIntensity;
     const glow = Math.max(p.magma, heat);
     const bright = 0.2 + 0.35 * p.clouds + 0.5 * p.snowball + 0.12 * p.ice + 0.1 * p.ocean;
     earthshine.intensity = 0.55 * bright * (1 - dust * 0.5) + glow * 0.35;

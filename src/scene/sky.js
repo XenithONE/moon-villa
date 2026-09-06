@@ -48,7 +48,7 @@ export function createSky({ radius = 2600 } = {}) {
       if (temp < 0.12) tmp.setRGB(0.75, 0.82, 1.0);
       else if (temp < 0.8) tmp.setRGB(1.0, 0.98, 0.94);
       else tmp.setRGB(1.0, 0.85, 0.65);
-      const b = 0.25 + Math.pow(rand(), 3.2) * 1.4;
+      const b = 0.22 + Math.pow(rand(), 3.2) * 0.78;
       col[i * 3] = tmp.r * b;
       col[i * 3 + 1] = tmp.g * b;
       col[i * 3 + 2] = tmp.b * b;

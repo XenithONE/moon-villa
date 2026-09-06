@@ -62,7 +62,7 @@ function makeWoodTexture(rand) {
 
 function makePlasterTexture(rand) {
   return canvasTexture(512, (ctx, s) => {
-    ctx.fillStyle = '#d9cbb2';
+    ctx.fillStyle = '#c4b294';
     ctx.fillRect(0, 0, s, s);
     const img = ctx.getImageData(0, 0, s, s);
     for (let i = 0; i < img.data.length; i += 4) {
@@ -178,7 +178,11 @@ export function createVilla() {
     group.add(mesh);
     return mesh;
   };
-  const box = (w, h, d, mat, x, y, z, opts) => add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat), { position: new THREE.Vector3(x, y, z) }), opts);
+  const box = (w, h, d, mat, x, y, z, opts) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    return add(m, opts);
+  };
 
   // ---- 床・天井・壁
   const floor = add(new THREE.Mesh(new THREE.PlaneGeometry(8, 7), wood), { cast: false });
@@ -207,11 +211,13 @@ export function createVilla() {
       color: 0x9fbfe8,
       transparent: true,
       opacity: 0.06,
-      roughness: 0.05,
+      roughness: 0.3,
       metalness: 0,
+      specularIntensity: 0.3,
       depthWrite: false,
     }),
   );
+  glass.name = 'glass';
   glass.position.set(0, 1.75, -3.5);
   group.add(glass);
   // 天井の梁
@@ -269,7 +275,7 @@ export function createVilla() {
   const radio = new THREE.Group();
   radio.name = 'radio';
   radio.position.set(1.15, 0.66, 1.3);
-  radio.rotation.y = 0.95;
+  radio.rotation.y = -Math.PI / 2 - 0.35; // 正面（ダイヤル側）を椅子に向ける
   const radioBody = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.18), new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.5 }));
   radioBody.position.y = 0.13;
   const radioFront = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.02), cream);
@@ -328,7 +334,7 @@ export function createVilla() {
   shade.position.y = 1.7;
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd090, emissiveIntensity: 3 }));
   bulb.position.y = 1.64;
-  const lampLight = new THREE.PointLight(0xffb46a, 10, 14, 2);
+  const lampLight = new THREE.PointLight(0xffb46a, 18, 16, 2);
   lampLight.position.y = 1.62;
   lampLight.castShadow = true;
   lampLight.shadow.mapSize.set(1024, 1024);
@@ -340,6 +346,23 @@ export function createVilla() {
   }
   lamp.add(lampBase, pole, shade, bulb, lampLight);
   group.add(lamp);
+
+  // ---- 天井のペンダントランプ（部屋全体をほんのり暖める）
+  const pendant = new THREE.Group();
+  pendant.position.set(1.3, 0, 2.3);
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.6, 6), metal);
+  cord.position.y = 2.9;
+  const pShade = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.22, 0.2, 32, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x3a2a1c, emissive: 0xffb070, emissiveIntensity: 0.1, side: THREE.DoubleSide, roughness: 0.8 }),
+  );
+  pShade.position.y = 2.55;
+  const pBulb = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10), new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd090, emissiveIntensity: 0.8 }));
+  pBulb.position.y = 2.5;
+  const pendantLight = new THREE.PointLight(0xffc48a, 7, 12, 2);
+  pendantLight.position.y = 2.45;
+  pendant.add(cord, pShade, pBulb, pendantLight);
+  group.add(pendant);
 
   // ---- 本棚（左の壁）
   const shelf = new THREE.Group();

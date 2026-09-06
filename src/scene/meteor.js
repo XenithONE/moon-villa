@@ -370,9 +370,32 @@ export function createImpactFX({ scene, earth, camera, look, radio }) {
     earth.setImpact({ dirLocal, flash: flashV, ring: ringR, ringA, dust, heat });
   }
 
+  /** 途中で止める（手動スクラブ時）。塵も熱も即座に消す */
+  function cancel() {
+    phase = 'idle';
+    t = 0;
+    dust = 0;
+    heat = 0;
+    flashV = 0;
+    ringR = 0;
+    ringA = 0;
+    debrisA = 0;
+    rock.visible = false;
+    glow.visible = false;
+    flash.visible = false;
+    ring.visible = false;
+    trail.points.visible = false;
+    ejecta.points.visible = false;
+    debris.points.visible = false;
+    clearParticles(trail);
+    clearParticles(ejecta);
+    earth.setImpact({ flash: 0, ring: 0, ringA: 0, dust: 0, heat: 0 });
+  }
+
   return {
     trigger,
     update,
+    cancel,
     get active() { return phase !== 'idle'; },
     get phase() { return phase; },
   };

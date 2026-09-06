@@ -15,9 +15,9 @@ import { createHUD } from './ui/hud.js';
 
 // 月面の夕暮れ：太陽は右手の地平線近く。地球は窓の左上、半分だけ照らされている。
 const SUN_DIR = new THREE.Vector3(0.93, 0.14, -0.34).normalize();
-const EARTH_DIR = new THREE.Vector3(-0.35, 0.42, -1).normalize();
+const EARTH_DIR = new THREE.Vector3(-0.2, 0.22, -1).normalize();
 const EARTH_DIST = 620;
-const EARTH_RADIUS = 62;
+const EARTH_RADIUS = 72;
 
 const canvas = document.getElementById('scene');
 const uiRoot = document.getElementById('ui');
@@ -39,7 +39,7 @@ const lighting = createLighting(scene, { sunDir: SUN_DIR, earthDir: EARTH_DIR })
 camera.position.copy(villa.seat);
 const look = createSeatedLook(camera, canvas, { baseYaw: 0, basePitch: 0.12 });
 // 最初は地球の少し下（窓枠と部屋が入る構図）を見る
-look.lookAt(earth.group.position.clone().addScaledVector(new THREE.Vector3(0, -1, 0), 150), { instant: true });
+look.lookAt(earth.group.position.clone().addScaledVector(new THREE.Vector3(0, -1, 0), 70), { instant: true });
 
 const post = createPostFX(renderer, scene, camera);
 const timeline = createTimeline({ speed: 1, cycleSeconds: 360 });
@@ -53,6 +53,9 @@ const hud = createHUD({
   radio,
   onMeteor: () => {
     if (fx.trigger({ giant: false })) timeline.hold(12);
+  },
+  onSeek: () => {
+    if (fx.active) fx.cancel();
   },
   onEnter: () => {
     radio.ensureContext();
@@ -93,16 +96,27 @@ canvas.addEventListener('pointermove', (e) => {
   canvas.classList.toggle('hover-radio', !look.dragging && radioHit(e));
 });
 
-window.addEventListener('resize', () => {
-  resize();
-  post.resize(window.innerWidth, window.innerHeight);
-});
+// サイズは毎フレーム照合する（非表示タブで起動すると 0×0 のまま resize が来ないことがある）
+const sizeNow = new THREE.Vector2();
+function ensureSize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (w < 2 || h < 2) return false;
+  renderer.getSize(sizeNow);
+  if (sizeNow.x !== w || sizeNow.y !== h) {
+    resize();
+    post.resize(w, h);
+  }
+  return true;
+}
+window.addEventListener('resize', ensureSize);
 
 // ---- ループ
 const clock = new THREE.Clock();
 let frames = 0;
-function frame() {
-  const dt = Math.min(0.1, clock.getDelta());
+function frame(dtOverride) {
+  const dt = typeof dtOverride === 'number' ? dtOverride : Math.min(0.1, clock.getDelta());
+  if (!ensureSize()) return;
   const fired = timeline.update(dt);
   for (const ev of fired) {
     hud.caption(ev);
@@ -120,7 +134,18 @@ function frame() {
   post.render(dt);
   if (++frames === 2) document.body.classList.add('ready');
 }
-renderer.setAnimationLoop(frame);
+// setAnimationLoop はタイムスタンプを渡してくるので dt と取り違えないよう包む
+renderer.setAnimationLoop(() => frame());
 
 // デバッグ用の窓口（ブラウザ検証で使う）
-window.__moonVilla = { timeline, radio, fx, earth, camera, renderer, hud, look };
+window.__moonVilla = {
+  timeline, radio, fx, earth, camera, renderer, hud, look, post, villa, lighting, scene, THREE,
+  /** 検証用：1 フレーム進める（rAF が止まる環境でも状態を進められる） */
+  step(dt = 1 / 60) {
+    frame(dt);
+    return { frames, year: timeline.state.year, t: timeline.state.t, fxPhase: fx.phase };
+  },
+  get frames() {
+    return frames;
+  },
+};

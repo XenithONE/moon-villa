@@ -94,6 +94,7 @@ body {
 .enter {
   position: absolute;
   inset: 0;
+  z-index: 5;
   display: grid;
   place-items: center;
   background: radial-gradient(ellipse at 50% 60%, rgba(20, 18, 28, 0.86), rgba(3, 3, 6, 0.97));
@@ -151,9 +152,19 @@ body {
 .hud {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 .hud > * {
   transition: opacity 0.9s ease;
+}
+/* 入場前は操作を受け付けない（入場画面の下に見えているだけ） */
+.hud.pre .bottom,
+.hud.pre .radio-panel {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.hud.pre .bottom * {
+  pointer-events: none;
 }
 .hud.idle .bottom {
   opacity: 0.08;
@@ -166,10 +177,11 @@ body {
   position: absolute;
   left: clamp(18px, 4vw, 56px);
   bottom: clamp(96px, 16vh, 150px);
-  max-width: min(46ch, 78vw);
+  max-width: min(60vw, 760px);
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
 }
 .year {
+  white-space: nowrap;
   font-size: clamp(26px, 4.2vw, 50px);
   font-weight: 500;
   letter-spacing: 0.12em;
