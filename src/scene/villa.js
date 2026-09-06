@@ -297,8 +297,8 @@ export function createVilla() {
   const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.5, 8), metal);
   antenna.position.set(-0.18, 0.46, -0.02);
   antenna.rotation.z = 0.35;
-  const dialLight = new THREE.PointLight(0xffa040, 0, 1.4, 2);
-  dialLight.position.set(0.1, 0.18, 0.16);
+  const dialLight = new THREE.PointLight(0xffa040, 0, 1.6, 2);
+  dialLight.position.set(0.1, 0.2, 0.42);
   for (const m of [radioBody, radioFront, grille, dial, needle, knob1, knob2, antenna]) {
     m.castShadow = true;
     m.receiveShadow = true;
@@ -513,8 +513,8 @@ export function createVilla() {
   }
 
   function setRadioOn(on) {
-    dialMat.emissiveIntensity = on ? 1.4 : 0;
-    dialLight.intensity = on ? 0.6 : 0;
+    dialMat.emissiveIntensity = on ? 1.1 : 0;
+    dialLight.intensity = on ? 0.12 : 0;
   }
 
   function setRadioNeedle(f) {
